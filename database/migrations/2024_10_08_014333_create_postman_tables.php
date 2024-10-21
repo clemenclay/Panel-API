@@ -8,14 +8,6 @@ class CreatePostmanTables extends Migration
 {
     public function up()
     {
-        Schema::create('postman_collections', function (Blueprint $table) {
-            $table->id();
-            $table->string('postman_id');
-            $table->string('name');
-            $table->string('schema_url');
-            $table->timestamps();
-        });
-
         Schema::create('postman_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('collection_id');

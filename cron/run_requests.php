@@ -1,7 +1,44 @@
 <?php
 
+require '/var/www/vendor/autoload.php'; // Ruta correcta del autoload
+$app = require_once '/var/www/bootstrap/app.php';
+
+// Función para cargar las variables desde el archivo .env
+function loadEnv($filePath) {
+    if (!file_exists($filePath)) {
+        throw new Exception(".env file not found");
+    }
+
+    $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) {
+            continue;
+        }
+
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
+
+// Función para obtener la conexión a la base de datos
+function getDatabaseConnection() {
+    // Cargar las variables desde el archivo .env
+    loadEnv('/var/www/.env'); // Ajustar la ruta si es necesario
+
+    $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+    $dbname = $_ENV['DB_DATABASE'] ?? 'apiloop';
+    $username = $_ENV['DB_USERNAME'] ?? 'root';
+    $password = $_ENV['DB_PASSWORD'] ?? 'admin';
+
+    try {
+        return new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    } catch (PDOException $e) {
+        die('Error de conexión: ' . $e->getMessage());
+    }
+}
+
+// Función para ejecutar una solicitud individual
 function executeRequest($request, $db) {
-    // Decodificar datos de la solicitud almacenada
     $url = $request['url'];
     $method = $request['method'];
     $headers = json_decode($request['headers'], true);
@@ -10,11 +47,8 @@ function executeRequest($request, $db) {
 
     // Inicializar cURL
     $ch = curl_init();
-
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    // Configurar método (POST, GET, etc.)
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 
     // Configurar headers
@@ -29,29 +63,25 @@ function executeRequest($request, $db) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, $formattedHeaders);
 
     // Configurar autenticación si es necesario
-    if (!empty($auth)) {
-        if (isset($auth['type']) && $auth['type'] == 'basic' && isset($auth['basic'])) {
-            $username = $auth['basic'][1]['value'] ?? ''; // Validar que exista el índice 1
-            $password = $auth['basic'][0]['value'] ?? ''; // Validar que exista el índice 0
-            curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
-        }
-        // Se puede agregar autenticación de token si es necesario
+    if (!empty($auth) && isset($auth['type']) && $auth['type'] == 'basic') {
+        $username = $auth['basic'][0]['value'] ?? '';
+        $password = $auth['basic'][1]['value'] ?? '';
+        curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
     }
 
-    // Configurar cuerpo de la solicitud si es un método POST o PUT
+    // Configurar cuerpo de la solicitud si es POST o PUT
     if ($method == 'POST' || $method == 'PUT') {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
     }
 
     // Ejecutar la solicitud
     $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE); // Obtener el código de estado HTTP
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
     // Guardar en la base de datos
     try {
-        // Preparar la inserción del log de la solicitud
         $stmt = $db->prepare("
-            INSERT INTO request_logs (request_id, status, response, execution_time) 
+            INSERT INTO request_logs (request_id, status, response, execution_time)
             VALUES (:request_id, :status, :response, NOW())
         ");
         $stmt->execute([
@@ -74,10 +104,9 @@ function executeRequest($request, $db) {
     curl_close($ch);
 }
 
-function executePostmanCollection($collectionId) {
+// Función para ejecutar una colección de Postman
+function executePostmanCollection($collectionId, $db) {
     try {
-        $db = new PDO('mysql:host=localhost;dbname=postman_db', 'root', 'admin');
-
         // Obtener todas las solicitudes de la colección
         $stmt = $db->prepare("SELECT * FROM postman_requests WHERE collection_id = ?");
         $stmt->execute([$collectionId]);
@@ -94,18 +123,19 @@ function executePostmanCollection($collectionId) {
     }
 }
 
+// Función para ejecutar todas las colecciones
 function executeAllCollections() {
     try {
-        $db = new PDO('mysql:host=localhost;dbname=postman_db', 'root', 'admin');
+        $db = getDatabaseConnection();
 
         // Obtener todas las colecciones
-        $stmt = $db->query("SELECT id FROM postman_collections"); // Asegúrate de que este nombre de tabla sea correcto
+        $stmt = $db->query("SELECT id FROM postman_collections");
         $collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Ejecutar cada colección
         foreach ($collections as $collection) {
             echo "Ejecutando colección con ID: " . $collection['id'] . "<br>";
-            executePostmanCollection($collection['id']);
+            executePostmanCollection($collection['id'], $db);
         }
 
     } catch (PDOException $e) {
@@ -115,4 +145,6 @@ function executeAllCollections() {
 
 // Ejecutar todas las colecciones
 executeAllCollections();
-?>
+
+// Registrar la ejecución en un archivo de log
+file_put_contents('/var/www/cron/cron_execution_log.txt', 'Ejecutado en: ' . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);

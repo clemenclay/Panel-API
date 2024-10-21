@@ -21,7 +21,7 @@ use App\Http\Controllers\PostmanController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
 // Rutas para el dashboard, solo accesibles por usuarios autenticados y verificados

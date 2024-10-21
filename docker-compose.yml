@@ -1,0 +1,78 @@
+version: "3.8" # Asegúrate de que esto esté aquí
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: app
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+        networks:
+            - laravel
+
+    webserver:
+        image: nginx:alpine
+        container_name: webserver
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/conf.d:/etc/nginx/conf.d
+        depends_on:
+            - app
+        networks:
+            - laravel
+
+    db:
+        image: mysql:8.0
+        container_name: mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: admin # Asegúrate de que la contraseña sea la correcta
+            MYSQL_DATABASE: apiloop # El nombre de la base de datos que deseas crear
+        ports:
+            - "3306:3306"
+        volumes:
+            - dbdata:/var/lib/mysql
+        networks:
+            - laravel
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        restart: unless-stopped
+        environment:
+            PMA_HOST: db
+            PMA_PORT: 3306
+            PMA_USER: root
+            PMA_PASSWORD: admin # Asegúrate de que esto coincida con MYSQL_PASSWORD
+        ports:
+            - "8080:80" # Accede a phpMyAdmin en http://localhost:8080
+        depends_on:
+            - db
+        networks:
+            - laravel
+
+    cron:
+        build:
+            context: .
+            dockerfile: Dockerfile-cron
+        container_name: cron
+        volumes:
+            - ./:/var/www
+        environment:
+            IS_CRON: true # Esto definirá la variable de entorno IS_CRON en el contenedor
+        networks:
+            - laravel
+        restart: always
+
+networks:
+    laravel:
+        driver: bridge
+
+volumes:
+    dbdata:
+        driver: local

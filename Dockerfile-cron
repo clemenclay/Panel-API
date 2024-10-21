@@ -1,0 +1,42 @@
+# Dockerfile-cron
+
+FROM php:8.1-cli
+
+# Instalar las extensiones necesarias
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Instalar dependencias de Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Copiar los archivos de la aplicación
+COPY . /var/www
+
+# Establecer el directorio de trabajo
+WORKDIR /var/www
+
+# Instalar las dependencias de Composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Instalar cron
+RUN apt-get update && apt-get install -y cron
+
+# Dar permisos al archivo run_requests.php
+RUN chmod +x /var/www/cron/run_requests.php
+
+# Copiar el archivo de configuración de cron
+COPY cron/cronfile /etc/cron.d/cronfile
+
+# Copiar el archivo .env
+COPY .env /var/www/.env
+
+# Dar permisos al archivo de cron
+RUN chmod 0644 /etc/cron.d/cronfile
+
+# Aplicar la configuración de cron
+RUN crontab /etc/cron.d/cronfile
+
+# Exponer el puerto (aunque no se utilice directamente en cron)
+EXPOSE 80
+
+# Comando para ejecutar cron en primer plano
+CMD ["cron", "-f"]

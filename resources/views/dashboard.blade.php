@@ -1,12 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
 
   <div class="container mt-5">
-        <h1>Estado de las Solicitudes</h1>
+
         <table id="logsTable" class="table table-bordered table-striped">
             <thead>
                 <tr>
@@ -22,9 +17,19 @@
             </thead>
             <tbody>
                 <?php
+
+
+                // Obtener las variables de entorno del archivo .env
+                $dbHost = env('DB_HOST');
+                $dbName = env('DB_DATABASE');
+                $dbUser = env('DB_USERNAME');
+                $dbPassword = env('DB_PASSWORD');
+
+
                 try {
                     // Conexión a la base de datos
-                    $db = new PDO('mysql:host=localhost;dbname=postman_db', 'root', 'admin');
+                    $db = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPassword);
+                    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                     // Consulta para obtener solo el último registro por cada solicitud
                     $stmt = $db->query("
@@ -118,6 +123,7 @@
                     }
                 } catch (PDOException $e) {
                     echo "Error en la consulta: " . $e->getMessage();
+                    die('Error de conexión: ' . $e->getMessage());
                 }
                 ?>
             </tbody>

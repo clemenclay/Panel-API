@@ -1,0 +1,2 @@
+* * * * * export PATH="/usr/local/bin:/usr/bin:/bin" && export $(cat /var/www/.env | xargs) && php /var/www/cron/run_requests.php >> /var/log/cron.log 2>&1
+
