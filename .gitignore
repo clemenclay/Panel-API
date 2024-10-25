@@ -18,3 +18,4 @@ yarn-error.log
 /.idea
 /.vscode
 cron/cron_execution_log.txt
+cron/cron_execution_log.txt
