@@ -1,18 +1,5 @@
 <?php
 
-// Cargar las variables de entorno si aún no están cargadas
-if (!getenv('APP_TIMEZONE')) {
-    $dotenv = Dotenv\Dotenv::createImmutable('/var/www');
-    $dotenv->load();
-}
-
-// Configurar la zona horaria
-date_default_timezone_set(getenv('APP_TIMEZONE') ?: 'UTC');
-
-// Depuración: Imprimir la zona horaria actual
-echo "Zona horaria actual: " . date_default_timezone_get() . PHP_EOL;
-
-
 require '/var/www/vendor/autoload.php'; // Ruta correcta del autoload
 $app = require_once '/var/www/bootstrap/app.php';
 
