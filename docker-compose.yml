@@ -1,4 +1,4 @@
-version: "3.8" # Asegúrate de que esto esté aquí
+# version: "3.8"
 
 services:
     app:
@@ -11,6 +11,10 @@ services:
             - ./:/var/www
         networks:
             - laravel
+        depends_on:
+            - db
+        command: >
+            sh -c "php artisan migrate --force && php artisan db:seed --force && php-fpm"
 
     webserver:
         image: nginx:alpine

@@ -28,8 +28,12 @@
     </style>
 
 
- <link rel="stylesheet" href="{{ asset('build/assets/app-DJQYi_JV.css') }}">
-<script src="{{ asset('build/assets/app-DI6-W-r-.js') }}" type="module"></script>
+<link rel="stylesheet" href="{{ asset('build/assets/app-DJQYi_JV.css') }}">
+
+<script type="module" src="{{ asset('build/assets/app-DI6-W-r-.js') }}"></script>
+
+
+
 
     </head>
     <body class="font-sans antialiased">
@@ -50,5 +54,11 @@
                 {{ $slot }}
             </main>
         </div>
+
+
+
+	<body>
+
+
     </body>
 </html>
