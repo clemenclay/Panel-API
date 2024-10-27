@@ -78,4 +78,25 @@ class PostmanController extends Controller
             return back()->withErrors(['postman_collection' => 'Error al guardar la colección: ' . $e->getMessage()]);
         }
     }
+
+    // Elimina la solicitud de Postman junto con sus logs
+    public function eliminar($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Eliminar registros relacionados en request_logs
+            DB::table('request_logs')->where('request_id', $id)->delete();
+
+            // Eliminar la solicitud de postman_requests
+            DB::table('postman_requests')->where('id', $id)->delete();
+
+            DB::commit();
+
+            return redirect()->route('upload.form')->with('success', 'Solicitud eliminada exitosamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['delete' => 'Error al eliminar la solicitud: ' . $e->getMessage()]);
+        }
+    }
 }

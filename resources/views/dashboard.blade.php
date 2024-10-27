@@ -96,7 +96,7 @@
                             <td>{$authDisplay}</td>
 
                             <td>
-                                <button type='button' class='btn btn-outline-info btn-sm' data-bs-toggle='modal' data-bs-target='#$modalId'>
+                                <button type='button' class='btn btn-secondary' data-bs-toggle='modal' data-bs-target='#$modalId'>
                                     Detalle
                                 </button>
 

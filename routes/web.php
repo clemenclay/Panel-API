@@ -31,6 +31,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 
 
+Route::get('/eliminar/{id}', [PostmanController::class, 'eliminar'])->name('eliminar');
+
+
 // Ruta para mostrar el formulario de carga de la colección
 Route::get('/upload-form', [PostmanController::class, 'showForm'])
     ->middleware(['auth', 'verified'])

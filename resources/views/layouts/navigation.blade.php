@@ -18,7 +18,7 @@
                     </x-nav-link>
 
                     <x-nav-link :href="route('upload.form')" :active="request()->routeIs('upload.form')">
-                        {{ __('Subir Colección Postman') }}
+                        {{ __('Colección Postman') }}
                     </x-nav-link>
 
                 </div>
